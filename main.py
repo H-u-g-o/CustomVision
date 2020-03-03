@@ -1,5 +1,5 @@
 import os, collections
-from secret_exakis import *
+from secret import *
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
 from azure.cognitiveservices.vision.customvision.training.models import image, PredictionQueryToken, Iteration
