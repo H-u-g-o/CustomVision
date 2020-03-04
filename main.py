@@ -7,17 +7,35 @@ from azure.cognitiveservices.vision.customvision.training.models import image, P
 
 class customVisionApi:
     '''Methods to call Custom Vision Prediction & Training API.'''
-    def __init__(self, endpoint=ENDPOINT, training_key=training_key, prediction_key=prediction_key, prediction_resource_id=prediction_ressource_id, projectId=projectId_PL, Iteration_id=Iteration_id_PL, publish_iteration_name=publish_iteration_name_PL, training_images=playing_set):
+    def __init__(self,
+     endpoint,
+     training_key,
+     prediction_key,
+     prediction_ressource_id,
+     project_id_A,
+     project_id_B,
+     iteration_id_A,
+     iteration_id_B,
+     iteration_name_A,
+     iteration_name_B,
+     training_images,
+  ):
+
      self.endpoint=endpoint
      self.training_key=training_key
      self.prediction_key=prediction_key
-     self.prediction_resource_id=prediction_resource_id
-     self.projectId=projectId
-     self.Iteration_id=Iteration_id
-     self.publish_iteration_name=publish_iteration_name
+     self.prediction_ressource_id=prediction_ressource_id
+     self.project_id_A=project_id_A
+     self.project_id_B=project_id_B
+     self.iteration_id_A=iteration_id_A
+     self.iteration_id_B=iteration_id_B
+     self.iteration_name_A=iteration_name_A
+     self.iteration_name_B=iteration_name_B
      self.training_images=training_images
+
     #Initializing Prediction Client
      self.predictor = CustomVisionPredictionClient(self.prediction_key, self.endpoint)
+
     #Initializing Training Client
      self.trainer = CustomVisionTrainingClient(self.training_key, self.endpoint)
 
@@ -129,15 +147,50 @@ class customVisionApi:
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-p", "--project", action="store", type=str, help="project ID", dest="project_id", default=None)
-    arg_parser.add_argument("-k", "--key", action="store", type=str, help="Training-Key", dest="training_key", default=None)
     arg_parser.add_argument("-e", "--endpoint", action="store", type=str, help="Endpoint", dest="endpoint", default="https://westeurope.api.cognitive.microsoft.com")
-    arg_parser.add_argument("-f", "--file", action="store", type=str, help="Image file", dest="file", default=None)
+    arg_parser.add_argument("-t", "--training_key", action="store", type=str, help="Training-Key", dest="training_key", default=training_key)
+    arg_parser.add_argument("-p", "--prediction_key", action="store", type=str, help="Prediction-Key", dest="prediction_key", default=prediction_key)
+    arg_parser.add_argument("-r", "--prediction_ressource", action="store", type=str, help="Prediction Ressource Id", dest="prediction_ressource_id", default=prediction_ressource_id)
+
+    arg_parser.add_argument("-A", "--project_A", action="store", type=str, help="project ID for model A", dest="project_id_A", default=projectId_PL)
+    arg_parser.add_argument("-B", "--project_B", action="store", type=str, help="project ID for model B", dest="project_id_B", default=projectId_IR)
+    arg_parser.add_argument("-nA", "--iteration_name_A", action="store", type=str, help="iteration name for model A", dest="iteration_name_A", default=publish_iteration_name_PL)
+    arg_parser.add_argument("-nB", "--iteration_name_B", action="store", type=str, help="iteration name for model B", dest="iteration_name_B", default=publish_iteration_name_IR)
+    arg_parser.add_argument("-iA", "--iteration_id_A", action="store", type=str, help="iteration id for model A", dest="iteration_id_A", default=Iteration_id_PL)
+    arg_parser.add_argument("-iB", "--iteration_id_B", action="store", type=str, help="iteration id for model B", dest="iteration_id_B", default=Iteration_id_IR)
+
+
+    arg_parser.add_argument("-f", "--file", action="store", type=str, help="Image file", dest="file", default=playing_set)
+
+
     args = arg_parser.parse_args()
 
-    if (not args.project_id or not args.training_key or not args.file):
+    if (not args.project_id_A or not args.project_id_B or not args.iteration_name_A or not args.iteration_name_B or not args.training_key or not args.prediction_key or not args.file):
         arg_parser.print_help()
         exit(-1)
 
+    p = customVisionApi(
+        endpoint=args.endpoint,
+        training_key=args.training_key,
+        prediction_key=args.prediction_key,
+        prediction_ressource_id=args.prediction_ressource_id,
+        project_id_A=args.project_id_A,
+        project_id_B=args.project_id_B,
+        iteration_id_A=args.iteration_id_A,
+        iteration_id_B=args.iteration_id_B,
+        iteration_name_A=args.iteration_name_A,
+        iteration_name_B=args.iteration_name_B,
+        training_images=args.file)
+
+    #List all images in directory
+    directory = os.listdir(args.file)
+    print("Found:", len(directory), "images")
+
+    #Apply the correct CustomVision model based on filename
+    for image in directory :
+        if "PL" in image :
+            print('yes')
+        else:
+            print(image)
 
 
