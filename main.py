@@ -1,4 +1,4 @@
-import os, collections
+import os, collections, argparse
 from secret import *
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
@@ -120,7 +120,7 @@ class customVisionApi:
         '''Delete images in prediction'''
         #List all predictions Id
         allIds = self.getIdsinPredictions()
-        #Create batches of 64 images (maximum for delete) & delete iamges
+        #Create batches of 64 images (maximum for delete) & delete images
         batch = [allIds[i: i+64] for i in range(0, len(allIds), 64)]
         for i in batch:
             delete = self.trainer.delete_prediction(self.projectId, ids=i)
@@ -128,5 +128,16 @@ class customVisionApi:
 
 
 if __name__ == "__main__":
-    #p = customVisionApi()
-    #p.predictNoStore()
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("-p", "--project", action="store", type=str, help="project ID", dest="project_id", default=None)
+    arg_parser.add_argument("-k", "--key", action="store", type=str, help="Training-Key", dest="training_key", default=None)
+    arg_parser.add_argument("-e", "--endpoint", action="store", type=str, help="Endpoint", dest="endpoint", default="https://westeurope.api.cognitive.microsoft.com")
+    arg_parser.add_argument("-f", "--file", action="store", type=str, help="Image file", dest="file", default=None)
+    args = arg_parser.parse_args()
+
+    if (not args.project_id or not args.training_key or not args.file):
+        arg_parser.print_help()
+        exit(-1)
+
+
+
