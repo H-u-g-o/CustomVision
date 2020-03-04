@@ -12,12 +12,9 @@ class customVisionApi:
      training_key,
      prediction_key,
      prediction_ressource_id,
-     project_id_A,
-     project_id_B,
-     iteration_id_A,
-     iteration_id_B,
-     iteration_name_A,
-     iteration_name_B,
+     project_id,
+     iteration_id,
+     iteration_name,
      training_images,
   ):
 
@@ -25,12 +22,9 @@ class customVisionApi:
      self.training_key=training_key
      self.prediction_key=prediction_key
      self.prediction_ressource_id=prediction_ressource_id
-     self.project_id_A=project_id_A
-     self.project_id_B=project_id_B
-     self.iteration_id_A=iteration_id_A
-     self.iteration_id_B=iteration_id_B
-     self.iteration_name_A=iteration_name_A
-     self.iteration_name_B=iteration_name_B
+     self.project_id=project_id
+     self.iteration_id=iteration_id
+     self.iteration_name=iteration_name
      self.training_images=training_images
 
     #Initializing Prediction Client
@@ -39,20 +33,31 @@ class customVisionApi:
     #Initializing Training Client
      self.trainer = CustomVisionTrainingClient(self.training_key, self.endpoint)
 
-    def predictNoStore(self):
-        '''Browse a local file & apply Custom Vision Detection on each image without storing them. Results are returned only if a default has come up with a probability of 10% or more.'''
-        #List all images in directory
+    def listImagesInFile(self):
+        '''Browse all images in a directory and split them in a dictionnary according if model name is present in file name'''
+        model_name ="PL"
+        images = {'Model_A':[],'Model_B':[]}
+        #List all images in directory & display count
         directory = os.listdir(self.training_images)
         print("Found:", len(directory), "images")
+        #Split images in dictionnary according to their name
+        for image in directory :
+            if model_name in image :
+                images['Model_A'].append(image)
+            else:
+                images['Model_B'].append(image)
+        print("Found:", len(images['Model_A']), "Model_A")
+        print("Found:", len(images['Model_B']), "Model_B")
+        return images
 
+    def predictModelNoStore(self, imagesDictionnary):
         listAllDefaultsInFile = []
-
         #Apply prediction on every image
-        for file in directory:
-            with open(self.training_images+'/'+file, "rb") as image_contents:
-                results = self.predictor.detect_image_with_no_store(self.projectId, self.publish_iteration_name, image_contents.read())
+        for dictImage in imagesDictionnary:
+            with open(self.training_images+'/'+dictImage, "rb") as image_contents:
+                results = self.predictor.detect_image_with_no_store(self.project_id, self.iteration_name, image_contents.read())
                 allDefault = {}
-                fileName = file
+                fileName = dictImage
                 #List all defaults in image with probability
                 getDefaultList = self.getDefaults(results.predictions)
                 #Create default categories with sum of probability
@@ -68,10 +73,9 @@ class customVisionApi:
         #Write result in file with name of the itteration
         saveResults = self.writeResult(listAllDefaultsInFile)
 
-
     def writeResult(self, listToBeWritten):
         '''Create a .txt file with the iteration name & write list content.'''
-        fileName = 'result_'+self.publish_iteration_name+'.txt'
+        fileName = 'result_'+self.iteration_name+'.txt'
         with open(fileName,'a') as f:
             f.write(str(listToBeWritten))
             f.close()
@@ -151,46 +155,54 @@ if __name__ == "__main__":
     arg_parser.add_argument("-t", "--training_key", action="store", type=str, help="Training-Key", dest="training_key", default=training_key)
     arg_parser.add_argument("-p", "--prediction_key", action="store", type=str, help="Prediction-Key", dest="prediction_key", default=prediction_key)
     arg_parser.add_argument("-r", "--prediction_ressource", action="store", type=str, help="Prediction Ressource Id", dest="prediction_ressource_id", default=prediction_ressource_id)
-
     arg_parser.add_argument("-A", "--project_A", action="store", type=str, help="project ID for model A", dest="project_id_A", default=projectId_PL)
     arg_parser.add_argument("-B", "--project_B", action="store", type=str, help="project ID for model B", dest="project_id_B", default=projectId_IR)
     arg_parser.add_argument("-nA", "--iteration_name_A", action="store", type=str, help="iteration name for model A", dest="iteration_name_A", default=publish_iteration_name_PL)
     arg_parser.add_argument("-nB", "--iteration_name_B", action="store", type=str, help="iteration name for model B", dest="iteration_name_B", default=publish_iteration_name_IR)
     arg_parser.add_argument("-iA", "--iteration_id_A", action="store", type=str, help="iteration id for model A", dest="iteration_id_A", default=Iteration_id_PL)
     arg_parser.add_argument("-iB", "--iteration_id_B", action="store", type=str, help="iteration id for model B", dest="iteration_id_B", default=Iteration_id_IR)
-
-
     arg_parser.add_argument("-f", "--file", action="store", type=str, help="Image file", dest="file", default=playing_set)
-
-
     args = arg_parser.parse_args()
 
     if (not args.endpoint or not args.training_key or not args.prediction_key or not args.prediction_ressource_id or not args.project_id_A or not args.project_id_B or not args.iteration_id_A or not args.iteration_id_B or not args.iteration_name_A or not args.iteration_name_B or not args.file):
         arg_parser.print_help()
         exit(-1)
 
-    p = customVisionApi(
+    model_name ="PL"
+    images = {'Model_A':[],'Model_B':[]}
+    #List all images in directory & display count
+    directory = os.listdir(args.file)
+    print("Found:", len(directory), "images")
+    #Split images in dictionnary according to their name
+    for image in directory :
+        if model_name in image :
+            images['Model_A'].append(image)
+        else:
+            images['Model_B'].append(image)
+    print("Found:", len(images['Model_A']), "Model_A")
+    print("Found:", len(images['Model_B']), "Model_B")
+
+    pl = customVisionApi(
         endpoint=args.endpoint,
         training_key=args.training_key,
         prediction_key=args.prediction_key,
         prediction_ressource_id=args.prediction_ressource_id,
-        project_id_A=args.project_id_A,
-        project_id_B=args.project_id_B,
-        iteration_id_A=args.iteration_id_A,
-        iteration_id_B=args.iteration_id_B,
-        iteration_name_A=args.iteration_name_A,
-        iteration_name_B=args.iteration_name_B,
+        project_id=args.project_id_A,
+        iteration_id=args.iteration_id_A,
+        iteration_name=args.iteration_name_A,
         training_images=args.file)
 
-    #List all images in directory
-    directory = os.listdir(args.file)
-    print("Found:", len(directory), "images")
+    defaults_Model_PL = pl.predictModelNoStore(images['Model_A'])
 
-    #Apply the correct CustomVision model based on filename
-    for image in directory :
-        if "PL" in image :
-            print('yes')
-        else:
-            print(image)
+    ir = customVisionApi(
+        endpoint=args.endpoint,
+        training_key=args.training_key,
+        prediction_key=args.prediction_key,
+        prediction_ressource_id=args.prediction_ressource_id,
+        project_id=args.project_id_B,
+        iteration_id=args.iteration_id_B,
+        iteration_name=args.iteration_name_B,
+        training_images=args.file)
 
+    defaults_Model_IR = ir.predictModelNoStore(images['Model_B'])
 
