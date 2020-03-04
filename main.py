@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
     args = arg_parser.parse_args()
 
-    if (not args.project_id_A or not args.project_id_B or not args.iteration_name_A or not args.iteration_name_B or not args.training_key or not args.prediction_key or not args.file):
+    if (not args.endpoint or not args.training_key or not args.prediction_key or not args.prediction_ressource_id or not args.project_id_A or not args.project_id_B or not args.iteration_id_A or not args.iteration_id_B or not args.iteration_name_A or not args.iteration_name_B or not args.file):
         arg_parser.print_help()
         exit(-1)
 
