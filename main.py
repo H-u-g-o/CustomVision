@@ -50,28 +50,22 @@ class customVisionApi:
         print("Found:", len(images['Model_B']), "Model_B")
         return images
 
-    def predictModelNoStore(self, imagesDictionnary):
-        listAllDefaultsInFile = []
-        #Apply prediction on every image
-        for dictImage in imagesDictionnary:
-            with open(self.training_images+'/'+dictImage, "rb") as image_contents:
-                results = self.predictor.detect_image_with_no_store(self.project_id, self.iteration_name, image_contents.read())
-                allDefault = {}
-                fileName = dictImage
-                #List all defaults in image with probability
-                getDefaultList = self.getDefaults(results.predictions)
-                #Create default categories with sum of probability
-                countDefault = self.defaultCounter(getDefaultList)
-                #Return Tag Name with probability > 10%
-                getSelectedTag = self.returnDefaultTag(countDefault)
-                #Create a list of dict with all defaults found in the file images
-                allDefault[fileName] = getSelectedTag
-                print(allDefault)
-                #Add default to list
-                listAllDefaultsInFile.append(dict(allDefault))
-
-        #Write result in file with name of the itteration
-        saveResults = self.writeResult(listAllDefaultsInFile)
+    def predictModelNoStore(self, imageToBeDetected):
+        '''Apply Cusom Vision API on image and list defaults'''
+        listAllDefaultsInImage = []
+        with open(self.training_images+'/'+imageToBeDetected, "rb") as image_contents:
+            results = self.predictor.detect_image_with_no_store(self.project_id, self.iteration_name, image_contents.read())
+            allDefault = {}
+            fileName = imageToBeDetected
+            #List all defaults in image with probability
+            getDefaultList = self.getDefaults(results.predictions)
+            #Create default categories with sum of probability
+            countDefault = self.defaultCounter(getDefaultList)
+            #Return Tag Name with probability > 10%
+            getSelectedTag = self.returnDefaultTag(countDefault)
+            #Create a list of dict with all defaults found in the file images
+            allDefault[fileName] = getSelectedTag
+        return allDefault
 
     def writeResult(self, listToBeWritten):
         '''Create a .txt file with the iteration name & write list content.'''
@@ -168,41 +162,46 @@ if __name__ == "__main__":
         arg_parser.print_help()
         exit(-1)
 
-    model_name ="PL"
-    images = {'Model_A':[],'Model_B':[]}
+    #Model object init for PL & IR
+    pl = customVisionApi(
+    endpoint=args.endpoint,
+    training_key=args.training_key,
+    prediction_key=args.prediction_key,
+    prediction_ressource_id=args.prediction_ressource_id,
+    project_id=args.project_id_A,
+    iteration_id=args.iteration_id_A,
+    iteration_name=args.iteration_name_A,
+    training_images=args.file)
+
+    ir = customVisionApi(
+    endpoint=args.endpoint,
+    training_key=args.training_key,
+    prediction_key=args.prediction_key,
+    prediction_ressource_id=args.prediction_ressource_id,
+    project_id=args.project_id_B,
+    iteration_id=args.iteration_id_B,
+    iteration_name=args.iteration_name_B,
+    training_images=args.file)
+
     #List all images in directory & display count
     directory = os.listdir(args.file)
     print("Found:", len(directory), "images")
-    #Split images in dictionnary according to their name
+
+    listAllDefaultsInImages = []
+
+    #Split images according to their name & predict defaults
     for image in directory :
-        if model_name in image :
-            images['Model_A'].append(image)
+        if 'PL' in image :
+            detect_defaults_PL = pl.predictModelNoStore(image)
+            listAllDefaultsInImages.append(detect_defaults_PL)
+            print(detect_defaults_PL)
         else:
-            images['Model_B'].append(image)
-    print("Found:", len(images['Model_A']), "Model_A")
-    print("Found:", len(images['Model_B']), "Model_B")
+            detect_defaults_IR = pl.predictModelNoStore(image)
+            listAllDefaultsInImages.append(detect_defaults_IR)
+            print(detect_defaults_IR)
 
-    pl = customVisionApi(
-        endpoint=args.endpoint,
-        training_key=args.training_key,
-        prediction_key=args.prediction_key,
-        prediction_ressource_id=args.prediction_ressource_id,
-        project_id=args.project_id_A,
-        iteration_id=args.iteration_id_A,
-        iteration_name=args.iteration_name_A,
-        training_images=args.file)
-
-    defaults_Model_PL = pl.predictModelNoStore(images['Model_A'])
-
-    ir = customVisionApi(
-        endpoint=args.endpoint,
-        training_key=args.training_key,
-        prediction_key=args.prediction_key,
-        prediction_ressource_id=args.prediction_ressource_id,
-        project_id=args.project_id_B,
-        iteration_id=args.iteration_id_B,
-        iteration_name=args.iteration_name_B,
-        training_images=args.file)
-
-    defaults_Model_IR = ir.predictModelNoStore(images['Model_B'])
-
+    #Write predictions results in file
+    with open('results.txt','a') as f:
+            f.write(str(listAllDefaultsInImages))
+            f.close()
+    print("Results saved")
