@@ -1,5 +1,7 @@
 import os, collections, argparse
 from secret import *
+import pymysql
+import pymysql.cursors
 from azure.cognitiveservices.vision.customvision.prediction import CustomVisionPredictionClient
 from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
 from azure.cognitiveservices.vision.customvision.training.models import image, PredictionQueryToken, Iteration
@@ -50,6 +52,11 @@ class customVisionApi:
         print("Found:", len(images['Model_B']), "Model_B")
         return images
 
+    def storeInSqlDb(self, AllDefaultDictionnary):
+        # Connect to the database
+        print(AllDefaultDictionnary)
+
+
     def predictModelNoStore(self, imageToBeDetected):
         '''Apply Cusom Vision API on image and list defaults'''
         listAllDefaultsInImage = []
@@ -65,6 +72,7 @@ class customVisionApi:
             getSelectedTag = self.returnDefaultTag(countDefault)
             #Create a list of dict with all defaults found in the file images
             allDefault[fileName] = getSelectedTag
+            sql = self.storeInSqlDb(allDefault)
         return allDefault
 
     def writeResult(self, listToBeWritten):
@@ -102,7 +110,8 @@ class customVisionApi:
         "Return only default with a certain probability."
         #Return Dictionnary with only default tag where probability > 10%
         accepted_probability = 10
-        OnlySelectedDefaultTag = {k for (k,v) in defaultsDictionnary.items() if v > accepted_probability}
+        OnlySelectedDefaultTag = {k:v for (k,v) in defaultsDictionnary.items() if v > accepted_probability}
+        print(OnlySelectedDefaultTag)
         return OnlySelectedDefaultTag
 
     def predictQuick(self):
@@ -194,11 +203,11 @@ if __name__ == "__main__":
         if 'PL' in image :
             detect_defaults_PL = pl.predictModelNoStore(image)
             listAllDefaultsInImages.append(detect_defaults_PL)
-            print(detect_defaults_PL)
+            #print(detect_defaults_PL)
         else:
             detect_defaults_IR = pl.predictModelNoStore(image)
             listAllDefaultsInImages.append(detect_defaults_IR)
-            print(detect_defaults_IR)
+            #print(detect_defaults_IR)
 
     #Write predictions results in file
     with open('results.txt','a') as f:
